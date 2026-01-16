@@ -61,6 +61,19 @@ public class MosaicGA {
         }
     }
 
+    static double fitnessTotal(Individual ind) {
+        double baseFitness = fitness(ind);
+
+        double polaScore =
+                pola0(ind) +
+                pola4(ind) +
+                pola6(ind) +
+                pola9(ind);
+
+        return baseFitness + 0.01 * polaScore;
+    }
+
+
     static double fitness(Individual ind) {
         int totalError = 0;
         for (int i = 0; i < rows; i++) {
@@ -142,9 +155,9 @@ public class MosaicGA {
 
                             if (i >= 0 && i < rows && j >= 0 && j < cols) {
                                 if (ind.gene[i][j] == 1) {
-                                    score += 2;   // reward kuat
+                                    score += 2;
                                 } else {
-                                    score -= 5;   // penalty keras
+                                    score -= 5;
                                 }
                             }
                         }
@@ -190,26 +203,4 @@ public class MosaicGA {
     static boolean isEdge(int r, int c) {
         return (r == 0 || r == rows - 1 || c == 0 || c == cols - 1) && !isCorner(r, c);
     }
-
-
-
-
-
-
-
-    // static Double pola0(Individual ind) {
-    //     return 0.0;
-    // }
-
-    // static Double pola6(Individual ind) {
-    //     return 0.0;
-    // }
-
-    // static Double pola4(Individual ind) {
-    //     return 0.0;
-    // }
-
-    // static Double pola9(Individual ind) {
-    //     return 0.0;
-    // }
 }
