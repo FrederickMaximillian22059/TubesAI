@@ -61,20 +61,155 @@ public class MosaicGA {
         }
     }
 
+    static double fitness(Individual ind) {
+        int totalError = 0;
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                int expected = mosaic[i][j];
+                if (expected >=0) {
+                    int actual = hitung3x3(ind, i, j);
+                    totalError += Math.abs(actual - expected);
+                }
+            }
+        }
+        return 1.0 / (1 + totalError);
+    }
+
+    //Untuk menghitung jumlah pada area 3x3 di sekitar (r,c)
+    static int hitung3x3(Individual ind, int r, int c) {
+        int sum = 0;
+        for (int i = r - 1; i <= r + 1; i++) {
+            for (int j = c - 1; j <= c + 1; j++) {
+                if (i >= 0 && i < rows && j >= 0 && j < cols) {
+                    sum += ind.gene[i][j];
+                }
+            }
+    }
+        return sum;
+    }
+
     //Untuk hitung fitness berdasarkan pola-pola yang diketahui (memang belum diisi)
-    static Double pola0(Individual ind) {
-        return 0.0;
+    static double pola0(Individual ind) {
+        double score = 0.0;
+
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                if (mosaic[r][c] == 0) {
+                    for (int i = r - 1; i <= r + 1; i++) {
+                        for (int j = c - 1; j <= c + 1; j++) {
+                            if (i >= 0 && i < rows && j >= 0 && j < cols) {
+                                if (ind.gene[i][j] == 0) score += 1;
+                                else score -= 2;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return score;
     }
 
-    static Double pola6(Individual ind) {
-        return 0.0;
+    static double pola9(Individual ind) {
+        double score = 0.0;
+
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                if (mosaic[r][c] == 9) {
+                    for (int i = r - 1; i <= r + 1; i++) {
+                        for (int j = c - 1; j <= c + 1; j++) {
+                            if (i >= 0 && i < rows && j >= 0 && j < cols) {
+                                if (ind.gene[i][j] == 1) score += 1;
+                                else score -= 2;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return score;
     }
 
-    static Double pola4(Individual ind) {
-        return 0.0;
+    static double pola4(Individual ind) {
+        double score = 0.0;
+
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+
+                if (mosaic[r][c] == 4 && isCorner(r, c)) {
+
+                    for (int i = r - 1; i <= r + 1; i++) {
+                        for (int j = c - 1; j <= c + 1; j++) {
+
+                            if (i >= 0 && i < rows && j >= 0 && j < cols) {
+                                if (ind.gene[i][j] == 1) {
+                                    score += 2;   // reward kuat
+                                } else {
+                                    score -= 5;   // penalty keras
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return score;
     }
 
-    static Double pola9(Individual ind) {
-        return 0.0;
+    static double pola6(Individual ind) {
+        double score = 0.0;
+
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+
+                if (mosaic[r][c] == 6 && isEdge(r, c)) {
+
+                    for (int i = r - 1; i <= r + 1; i++) {
+                        for (int j = c - 1; j <= c + 1; j++) {
+
+                            if (i >= 0 && i < rows && j >= 0 && j < cols) {
+                                if (ind.gene[i][j] == 1) {
+                                    score += 2;
+                                } else {
+                                    score -= 4;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return score;
     }
+
+
+    //Method untuk mengecek apakah suatu angka ada di corner atau sisi, digunakan di pola4 dan pola6
+    static boolean isCorner(int r, int c) {
+        return (r == 0 || r == rows - 1) && (c == 0 || c == cols - 1);
+    }
+
+    static boolean isEdge(int r, int c) {
+        return (r == 0 || r == rows - 1 || c == 0 || c == cols - 1) && !isCorner(r, c);
+    }
+
+
+
+
+
+
+
+    // static Double pola0(Individual ind) {
+    //     return 0.0;
+    // }
+
+    // static Double pola6(Individual ind) {
+    //     return 0.0;
+    // }
+
+    // static Double pola4(Individual ind) {
+    //     return 0.0;
+    // }
+
+    // static Double pola9(Individual ind) {
+    //     return 0.0;
+    // }
 }
