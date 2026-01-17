@@ -27,8 +27,8 @@ public class Individual implements Comparable<Individual>{//Ini untuk mapping in
 
     //dipakai untuk membuat kandidat solusi awal saja 
     public void randomInit(Random rng){
-        for(int i = 0 ; i < MosaicGA.rows-1 ; i++){
-            for(int j = 0 ; j < MosaicGA.cols-1 ; j++){
+        for(int i = 0 ; i < MosaicGA.rows ; i++){
+            for(int j = 0 ; j < MosaicGA.cols; j++){
                 gene[i][j] = rng.nextBoolean() ? 0 : 1;
             }
         }

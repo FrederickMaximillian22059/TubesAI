@@ -12,15 +12,134 @@ public class MosaicGA {
     static int populationSize = 100;
     static double mutationRate = 0.01;
     static int generations = 1000;
+    // public static void main(String[] args) {
+    //     try {
+    //         readMosaic("mosaic1.txt");
+    //         Individual ind = createRandomIndividual();
+    //         cekEncoding(ind);
+    //     } catch (Exception e) {
+    //         e.printStackTrace();
+    //     }
+    // }
+
+    //Main untuk testing sementara saja
     public static void main(String[] args) {
         try {
             readMosaic("mosaic1.txt");
-            Individual ind = createRandomIndividual();
+
+            //Buat 1 individu acak
+            Individual ind = new Individual();
+            ind.randomInit(rand);
+
+            System.out.println("=== GENOTYPE ===");
             cekEncoding(ind);
+
+            //Cek hitung3x3 manual
+            System.out.println("\n=== TEST hitung3x3 ===");
+            int r = rows / 2;
+            int c = cols / 2;
+            int sum = hitung3x3(ind, r, c);
+            System.out.println("hitung3x3(" + r + "," + c + ") = " + sum);
+
+            //Cek fitness dasar
+            double baseFit = fitness(ind);
+            System.out.println("\nBase fitness = " + baseFit);
+            System.out.println("Total error  = " + ind.totalError);
+
+            //Cek pola satu per satu
+            double p0 = pola0(ind);
+            double p4 = pola4(ind);
+            double p6 = pola6(ind);
+            double p9 = pola9(ind);
+
+            System.out.println("\n=== POLA SCORE ===");
+            System.out.println("pola0 = " + p0);
+            System.out.println("pola4 = " + p4);
+            System.out.println("pola6 = " + p6);
+            System.out.println("pola9 = " + p9);
+
+            //Fitness total
+            double totalFit = fitnessTotal(ind);
+            System.out.println("\nTotal fitness = " + totalFit);
+
+            if (totalFit < 0) {
+                System.out.println("WARNING: fitness negatif");
+            }
+
+            //Mutasi
+            System.out.println("\n=== TEST MUTATION ===");
+            int countBefore = countOnes(ind);
+            ind.mutate(rand, 1.0);
+            int countAfter = countOnes(ind);
+
+            System.out.println("Jumlah 1 sebelum = " + countBefore);
+            System.out.println("Jumlah 1 sesudah = " + countAfter);
+
+
+            //Copy
+            System.out.println("\n=== TEST COPY ===");
+            Individual copy = new Individual(ind);
+            copy.flip(r, c);
+
+            System.out.println("Original gene = " + ind.gene[r][c]);
+            System.out.println("Copy gene     = " + copy.gene[r][c]);
+
+            testGetFittest();
+            testTournamentSelection();
+
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
+
+    static void testTournamentSelection() {
+        System.out.println("\n=== TEST tournamentIndividual ===");
+
+        Random rng = new Random(2);
+
+        Population pop = new Population(10, rng, false);
+
+        for (int i = 0; i < 10; i++) {
+            pop.individuals[i] = new Individual();
+            pop.individuals[i].fitness = i; // fitness naik
+        }
+
+        Individual selected = pop.tournamentIndividual(rng, 3);
+
+        System.out.println("Selected fitness = " + selected.fitness);
+        System.out.println("Note: should be relatively high (>= 7)");
+    }
+
+
+    static void testGetFittest() {
+        System.out.println("=== TEST getFittest ===");
+
+        Random rng = new Random(1);
+
+        Population pop = new Population(5, rng, false);
+
+        for (int i = 0; i < 5; i++) {
+            pop.individuals[i] = new Individual();
+            pop.individuals[i].randomInit(rng);
+            pop.individuals[i].fitness = i; // set manual, terkontrol
+        }
+
+        Individual best = pop.getFittest();
+
+        System.out.println("Expected fitness = 4");
+        System.out.println("Actual fitness   = " + best.fitness);
+    }
+
+
+    static int countOnes(Individual ind) {
+        int cnt = 0;
+        for (int i = 0; i < rows; i++)
+            for (int j = 0; j < cols; j++)
+                cnt += ind.gene[i][j];
+        return cnt;
+    }
+
+
 
     //Untuk membaca file txt yang berisi ukuran dan isi mosaic
     static void readMosaic(String filename) throws Exception {
@@ -85,6 +204,7 @@ public class MosaicGA {
                 }
             }
         }
+        ind.totalError = totalError;
         return 1.0 / (1 + totalError);
     }
 
