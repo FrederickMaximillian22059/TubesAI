@@ -12,123 +12,95 @@ public class MosaicGA {
     static int populationSize = 100;
     static double mutationRate = 0.01;
     static int generations = 1000;
-    // public static void main(String[] args) {
-    //     try {
-    //         readMosaic("mosaic1.txt");
-    //         Individual ind = createRandomIndividual();
-    //         cekEncoding(ind);
-    //     } catch (Exception e) {
-    //         e.printStackTrace();
-    //     }
-    // }
-
-    //Main untuk testing sementara saja
     public static void main(String[] args) {
         try {
-            readMosaic("mosaic1.txt");
+            //Baca papan
+            readMosaic("mosaic3.txt");
 
-            //Buat 1 individu acak
-            Individual ind = new Individual();
-            ind.randomInit(rand);
+            //Inisialisasi populasi awal
+            Population population = new Population(populationSize, rand, true);
 
-            System.out.println("=== GENOTYPE ===");
-            cekEncoding(ind);
+            //Evolusi generasi
+            for (int gen = 0; gen < generations; gen++) {
 
-            //Cek hitung3x3 manual
-            System.out.println("\n=== TEST hitung3x3 ===");
-            int r = rows / 2;
-            int c = cols / 2;
-            int sum = hitung3x3(ind, r, c);
-            System.out.println("hitung3x3(" + r + "," + c + ") = " + sum);
+                Individual best = population.getFittest();
 
-            //Cek fitness dasar
-            double baseFit = fitness(ind);
-            System.out.println("\nBase fitness = " + baseFit);
-            System.out.println("Total error  = " + ind.totalError);
+                //Berhenti jika solusi sempurna ditemukan
+                if (best.totalError == 0) {
+                    break;
+                }
 
-            //Cek pola satu per satu
-            double p0 = pola0(ind);
-            double p4 = pola4(ind);
-            double p6 = pola6(ind);
-            double p9 = pola9(ind);
-
-            System.out.println("\n=== POLA SCORE ===");
-            System.out.println("pola0 = " + p0);
-            System.out.println("pola4 = " + p4);
-            System.out.println("pola6 = " + p6);
-            System.out.println("pola9 = " + p9);
-
-            //Fitness total
-            double totalFit = fitnessTotal(ind);
-            System.out.println("\nTotal fitness = " + totalFit);
-
-            if (totalFit < 0) {
-                System.out.println("WARNING: fitness negatif");
+                population = evolvePopulation(population, rand);
             }
 
-            //Mutasi
-            System.out.println("\n=== TEST MUTATION ===");
-            int countBefore = countOnes(ind);
-            ind.mutate(rand, 1.0);
-            int countAfter = countOnes(ind);
+            //Ambil solusi terbaik akhir
+            Individual best = population.getFittest();
 
-            System.out.println("Jumlah 1 sebelum = " + countBefore);
-            System.out.println("Jumlah 1 sesudah = " + countAfter);
+            //Pastikan fitness up-to-date
+            best.updateFitness();
 
-
-            //Copy
-            System.out.println("\n=== TEST COPY ===");
-            Individual copy = new Individual(ind);
-            copy.flip(r, c);
-
-            System.out.println("Original gene = " + ind.gene[r][c]);
-            System.out.println("Copy gene     = " + copy.gene[r][c]);
-
-            testGetFittest();
-            testTournamentSelection();
+            //Cetak solusi akhir
+            printFinalSolution(best);
 
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    static void testTournamentSelection() {
-        System.out.println("\n=== TEST tournamentIndividual ===");
 
-        Random rng = new Random(2);
+    static void printFinalSolution(Individual best) {
+        System.out.println("SOLUSI TERBAIK DITEMUKAN:");
+        System.out.println("Fitness     = " + best.fitness);
+        System.out.println("Total Error = " + best.totalError);
+        System.out.println("Genotype:");
 
-        Population pop = new Population(10, rng, false);
-
-        for (int i = 0; i < 10; i++) {
-            pop.individuals[i] = new Individual();
-            pop.individuals[i].fitness = i; // fitness naik
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                System.out.print(best.gene[i][j] + " ");
+            }
+            System.out.println();
         }
-
-        Individual selected = pop.tournamentIndividual(rng, 3);
-
-        System.out.println("Selected fitness = " + selected.fitness);
-        System.out.println("Note: should be relatively high (>= 7)");
     }
 
 
-    static void testGetFittest() {
-        System.out.println("=== TEST getFittest ===");
 
-        Random rng = new Random(1);
+    // static void testTournamentSelection() {
+    //     System.out.println("\n=== TEST tournamentIndividual ===");
 
-        Population pop = new Population(5, rng, false);
+    //     Random rng = new Random(2);
 
-        for (int i = 0; i < 5; i++) {
-            pop.individuals[i] = new Individual();
-            pop.individuals[i].randomInit(rng);
-            pop.individuals[i].fitness = i; // set manual, terkontrol
-        }
+    //     Population pop = new Population(10, rng, false);
 
-        Individual best = pop.getFittest();
+    //     for (int i = 0; i < 10; i++) {
+    //         pop.individuals[i] = new Individual();
+    //         pop.individuals[i].fitness = i; // fitness naik
+    //     }
 
-        System.out.println("Expected fitness = 4");
-        System.out.println("Actual fitness   = " + best.fitness);
-    }
+    //     Individual selected = pop.tournamentIndividual(rng, 3);
+
+    //     System.out.println("Selected fitness = " + selected.fitness);
+    //     System.out.println("Note: should be relatively high (>= 7)");
+    // }
+
+
+    // static void testGetFittest() {
+    //     System.out.println("=== TEST getFittest ===");
+
+    //     Random rng = new Random(1);
+
+    //     Population pop = new Population(5, rng, false);
+
+    //     for (int i = 0; i < 5; i++) {
+    //         pop.individuals[i] = new Individual();
+    //         pop.individuals[i].randomInit(rng);
+    //         pop.individuals[i].fitness = i; // set manual, terkontrol
+    //     }
+
+    //     Individual best = pop.getFittest();
+
+    //     System.out.println("Expected fitness = 4");
+    //     System.out.println("Actual fitness   = " + best.fitness);
+    // }
 
 
     static int countOnes(Individual ind) {
@@ -322,5 +294,38 @@ public class MosaicGA {
 
     static boolean isEdge(int r, int c) {
         return (r == 0 || r == rows - 1 || c == 0 || c == cols - 1) && !isCorner(r, c);
+    }
+
+    static Individual crossover(Individual p1, Individual p2, Random rng){
+        Individual child = new Individual();
+        for(int i = 0 ; i < rows ; i++){
+            for(int j = 0 ; j < cols ; j++){
+                if(rng.nextBoolean()){
+                    child.gene[i][j] = p1.gene[i][j];
+                } else {
+                    child.gene[i][j] = p2.gene[i][j];
+                }
+            }
+        }
+        return child;
+    }
+
+    static Population evolvePopulation(Population pop, Random rng){
+        Population newPop = new Population(pop.individuals.length, rng, false);
+        
+        int elitism = 1;
+
+        newPop.individuals[0] = new Individual(pop.getFittest());
+
+        for(int i = elitism; i<newPop.individuals.length; i++){
+            Individual parent1 = pop.tournamentIndividual(rng, 5);
+            Individual parent2 = pop.tournamentIndividual(rng, 5);
+            Individual child = crossover(parent1, parent2, rng);
+            child.mutate(rng, mutationRate);
+            child.updateFitness();
+
+            newPop.individuals[i] = child;
+        }
+        return newPop;
     }
 }
