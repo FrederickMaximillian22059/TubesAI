@@ -9,7 +9,7 @@ public class MosaicGA {
     static Random rand = new Random(12345);
 
     //Parameter yang nanti bisa ganti untuk eksperimen
-    static int populationSize = 1000;
+    static int populationSize = 100;
     static double mutationRate = 0.001;
     static int generations = 1000;
     public static void main(String[] args) {
@@ -66,6 +66,8 @@ public class MosaicGA {
 
             //Cetak solusi akhir
             printFinalSolution(best, stopReason, genFound);
+
+            printError(best);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -302,5 +304,26 @@ public class MosaicGA {
             newPop.individuals[i] = child;
         }
         return newPop;
+    }
+
+    static void printError(Individual ind){
+        System.out.println("====================");
+        for(int i = 0 ; i < rows ; i++){
+            for(int j = 0 ; j < cols ; j++){
+                int expected = mosaic[i][j];
+                if (expected==-1) {
+                    System.out.print("-1 ");
+                }
+                else{
+                    int actual = hitung3x3(ind, i, j);
+                    if (actual == expected) {
+                        System.out.print(actual + " ");
+                    } else {
+                        System.out.print(expected + "X ");
+                    }
+                }
+            }
+            System.out.println();
+        }
     }
 }
