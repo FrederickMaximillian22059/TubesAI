@@ -388,14 +388,6 @@ public class MosaicGA {
         for (int r = r1; r <= r2; r++) {
             for (int c = c1; c <= c2; c++) {
 
-                // kalau mau sel clue tidak ikut berubah (tetap putih)
-                // kalau tidak mau, hapus blok IF ini
-                if (mosaic[r][c] >= 0) {
-                    child1.gene[r][c] = 0;
-                    child2.gene[r][c] = 0;
-                    continue;
-                }
-
                 int temp = child1.gene[r][c];
                 child1.gene[r][c] = child2.gene[r][c];
                 child2.gene[r][c] = temp;
