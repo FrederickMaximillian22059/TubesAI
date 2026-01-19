@@ -37,4 +37,34 @@ public class Population {
         }
         return tournament.getFittest();
     }
+
+    //method untuk melakukan roulette wheel selection
+    public Individual rouletteWheelSelection(Random rand){
+        double minFitness = Double.MAX_VALUE;
+        for(Individual ind : individuals){
+            if(ind.fitness < minFitness){
+                minFitness = ind.fitness;
+            }
+        }
+
+        double shift = 0.0;
+        if(minFitness < 0){
+            shift = -minFitness;
+        }
+
+        double totalFitness = 0.0;
+        for(Individual ind : individuals){
+            totalFitness += ind.fitness + shift;
+        }
+
+        double randomPoint = rand.nextDouble() * totalFitness;
+        double cumulativeFitness = 0.0;
+        for(Individual ind : individuals){
+            cumulativeFitness += ind.fitness + shift;
+            if(cumulativeFitness >= randomPoint){
+                return new Individual(ind);
+            }
+        }
+        return new Individual(individuals[individuals.length - 1]);
+    }
 }

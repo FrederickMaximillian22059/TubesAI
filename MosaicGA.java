@@ -6,16 +6,21 @@ public class MosaicGA {
     static int rows;
     static int cols;
     static int[][] mosaic;
-    static Random rand = new Random();
+    static Random rand = new Random(12345);
 
     //Parameter yang nanti bisa ganti untuk eksperimen
-    static int populationSize = 100;
-    static double mutationRate = 0.01;
+    static int populationSize = 1000;
+    static double mutationRate = 0.001;
     static int generations = 1000;
     public static void main(String[] args) {
+        int genFound = -1;
+        String stopReason = "";
+        double bestFitnessNow = Double.NEGATIVE_INFINITY;
+        int stagnantCount = 0;
+        int maxStagnant = 500;
         try {
             //Baca papan
-            readMosaic("mosaic3.txt");
+            readMosaic("mosaic5x5_Hard.txt");
 
             //Inisialisasi populasi awal
             Population population = new Population(populationSize, rand, true);
@@ -27,10 +32,30 @@ public class MosaicGA {
 
                 //Berhenti jika solusi sempurna ditemukan
                 if (best.totalError == 0) {
+                    genFound = gen;
+                    stopReason = "Solusi ditemukan";
+                    break;
+                }
+
+                if (best.fitness > bestFitnessNow) {
+                    bestFitnessNow = best.fitness;
+                    stagnantCount = 0;
+                }
+                else{
+                    stagnantCount++;
+                }
+
+                if (stagnantCount>=maxStagnant) {
+                    genFound = gen;
+                    stopReason = "Stagnant";
                     break;
                 }
 
                 population = evolvePopulation(population, rand);
+            }
+
+            if (stopReason.equals("")) {
+                stopReason = "Maksimum generasi";
             }
 
             //Ambil solusi terbaik akhir
@@ -40,7 +65,7 @@ public class MosaicGA {
             best.updateFitness();
 
             //Cetak solusi akhir
-            printFinalSolution(best);
+            printFinalSolution(best, stopReason, genFound);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -48,7 +73,7 @@ public class MosaicGA {
     }
 
 
-    static void printFinalSolution(Individual best) {
+    static void printFinalSolution(Individual best, String stopReason, int genFound) {
         System.out.println("SOLUSI TERBAIK DITEMUKAN:");
         System.out.println("Fitness     = " + best.fitness);
         System.out.println("Total Error = " + best.totalError);
@@ -60,48 +85,9 @@ public class MosaicGA {
             }
             System.out.println();
         }
+        System.out.println("Generation ditemukan: " + genFound);
+        System.out.println("Alasan berhenti: " + stopReason);
     }
-
-
-
-    // static void testTournamentSelection() {
-    //     System.out.println("\n=== TEST tournamentIndividual ===");
-
-    //     Random rng = new Random(2);
-
-    //     Population pop = new Population(10, rng, false);
-
-    //     for (int i = 0; i < 10; i++) {
-    //         pop.individuals[i] = new Individual();
-    //         pop.individuals[i].fitness = i; // fitness naik
-    //     }
-
-    //     Individual selected = pop.tournamentIndividual(rng, 3);
-
-    //     System.out.println("Selected fitness = " + selected.fitness);
-    //     System.out.println("Note: should be relatively high (>= 7)");
-    // }
-
-
-    // static void testGetFittest() {
-    //     System.out.println("=== TEST getFittest ===");
-
-    //     Random rng = new Random(1);
-
-    //     Population pop = new Population(5, rng, false);
-
-    //     for (int i = 0; i < 5; i++) {
-    //         pop.individuals[i] = new Individual();
-    //         pop.individuals[i].randomInit(rng);
-    //         pop.individuals[i].fitness = i; // set manual, terkontrol
-    //     }
-
-    //     Individual best = pop.getFittest();
-
-    //     System.out.println("Expected fitness = 4");
-    //     System.out.println("Actual fitness   = " + best.fitness);
-    // }
-
 
     static int countOnes(Individual ind) {
         int cnt = 0;
@@ -110,8 +96,6 @@ public class MosaicGA {
                 cnt += ind.gene[i][j];
         return cnt;
     }
-
-
 
     //Untuk membaca file txt yang berisi ukuran dan isi mosaic
     static void readMosaic(String filename) throws Exception {
@@ -129,17 +113,6 @@ public class MosaicGA {
             }
         }
         buffread.close();
-    }
-
-    //Untuk membuat individu secara acak
-    static Individual createRandomIndividual() {
-        Individual ind = new Individual();
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                ind.gene[i][j] = rand.nextBoolean() ? 1 : 0;
-            }
-        }
-        return ind;
     }
 
     //Untuk cek encoding individu saja, nanti tidak dipakai
@@ -318,8 +291,10 @@ public class MosaicGA {
         newPop.individuals[0] = new Individual(pop.getFittest());
 
         for(int i = elitism; i<newPop.individuals.length; i++){
-            Individual parent1 = pop.tournamentIndividual(rng, 5);
-            Individual parent2 = pop.tournamentIndividual(rng, 5);
+            // Individual parent1 = pop.tournamentIndividual(rng, 5);
+            // Individual parent2 = pop.tournamentIndividual(rng, 5);
+            Individual parent1 = pop.rouletteWheelSelection(rng);
+            Individual parent2 = pop.rouletteWheelSelection(rng);
             Individual child = crossover(parent1, parent2, rng);
             child.mutate(rng, mutationRate);
             child.updateFitness();

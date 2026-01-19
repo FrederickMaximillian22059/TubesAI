@@ -29,7 +29,7 @@ public class Individual implements Comparable<Individual>{//Ini untuk mapping in
     public void randomInit(Random rng){
         for(int i = 0 ; i < MosaicGA.rows ; i++){
             for(int j = 0 ; j < MosaicGA.cols; j++){
-                gene[i][j] = rng.nextBoolean() ? 0 : 1;
+                gene[i][j] = rng.nextBoolean() ? 1 : 0;
             }
         }
     }
@@ -39,7 +39,7 @@ public class Individual implements Comparable<Individual>{//Ini untuk mapping in
         gene[r][c] = 1 - gene[r][c];
     }
 
-    //ini method mutasinya 
+    //ini method mutasinya (Single gene random mutation)
     public void mutate(Random rng, double mutationRate){
         //kita harus check dulu apakah boleh di mutasi atau tidak
         if(rng.nextDouble() < mutationRate){
