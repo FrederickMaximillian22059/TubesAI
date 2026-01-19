@@ -1,5 +1,6 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.util.ArrayList;
 import java.util.Random;
 
 public class MosaicGA {
@@ -269,7 +270,81 @@ public class MosaicGA {
         return (r == 0 || r == rows - 1 || c == 0 || c == cols - 1) && !isCorner(r, c);
     }
 
-    static Individual crossover(Individual p1, Individual p2, Random rng){
+    //Method untuk random flip-bit
+    static void randomFlipBit(Individual ind, Random rng){
+        int r =  rng.nextInt(rows);
+        int c = rng.nextInt(cols);
+        ind.flip(r, c);
+    }
+
+    //Mutasi guided: cari clue paling salah, lalu flip yang memperbaiki
+    static void guidedFlipBit(Individual ind, Random rng){
+        int bestR = -1;
+        int bestC = -1;
+        int bestExpected = 0;
+        int bestActual = 0;
+        int bestError = 0;
+
+        // cari clue yang error nya paling besar
+        for(int r = 0; r < rows; r++){
+            for(int c = 0; c < cols; c++){
+                int expected = mosaic[r][c];
+                if(expected<0){
+                    continue;
+                }
+                int actual = hitung3x3(ind, r, c);
+                int err = Math.abs(actual- expected);
+
+                if(err>bestExpected){
+                    bestError = err;
+                    bestR = r;
+                    bestC = c;
+                    bestExpected = expected;
+                    bestActual = actual;
+                }
+            }
+        }
+        //kalau sudah ketemu cluenya -> lakukan
+        if(bestError==0 || bestR==-1){
+            randomFlipBit(ind, rng);
+            return;
+        }
+
+        //tentukan arah kebalikannya
+        boolean needDecrease = (bestActual>bestExpected);
+        boolean needIncrease = (bestActual<bestExpected);
+
+        //kumpulkan kandidat sel yang bisa di flip di 3x3
+        ArrayList<int[]> candidates = new ArrayList<>();
+
+        for(int r = bestR - 1; r <= bestR+1; r++){
+            for (int c = bestC - 1; c <= bestC + 1; c++) {
+                if (r < 0 || r >= rows || c < 0 || c >= cols) {
+                    continue;
+                }
+                int val = ind.gene[r][c];
+                if(needDecrease && val==1){
+                    candidates.add(new int[]{r, c}); //flip 1 - 0
+                }else if(needIncrease && val==0){
+                    candidates.add(new int[]{r, c}); //flip 0 - 1
+                }
+            }
+        }
+        //kalau kandidat kosong - fallback random
+        if(candidates.isEmpty()){
+            randomFlipBit(ind, rng);
+            return;
+        }
+
+        //pilih kandidat random lalu flip
+        int pick = rng.nextInt(candidates.size());
+        int[] cell = candidates.get(pick);
+        ind.flip(cell[0], cell[1]);
+
+    }
+
+    // Uniform crossover: tiap gen diambil dari parent1 atau parent2 secara acak
+    static Individual uniformCrossover(Individual p1, Individual p2, Random rng){
         Individual child = new Individual();
         for(int i = 0 ; i < rows ; i++){
             for(int j = 0 ; j < cols ; j++){
@@ -283,6 +358,54 @@ public class MosaicGA {
         return child;
     }
 
+    // Deep copy individu (biar child tidak share reference dengan parent)
+    static Individual deepCopy(Individual src) {
+        Individual dst = new Individual();
+        for (int r = 0; r < rows; r++) {
+            System.arraycopy(src.gene[r], 0, dst.gene[r], 0, cols);
+        }
+        return dst;
+    }
+
+    // Rectangle crossover: swap 1 blok persegi panjang antara parent1 dan parent2
+// Hasil: 2 anak (child1, child2)
+    static Individual[] rectangleCrossover(Individual parent1, Individual parent2, Random rng) {
+
+        Individual child1 = deepCopy(parent1);
+        Individual child2 = deepCopy(parent2);
+
+        // 1) pilih 2 baris acak untuk membentuk batas rectangle
+        int r1 = rng.nextInt(rows);
+        int r2 = rng.nextInt(rows);
+        if (r2 < r1) { int tmp = r1; r1 = r2; r2 = tmp; }
+
+        // 2) pilih 2 kolom acak untuk membentuk batas rectangle
+        int c1 = rng.nextInt(cols);
+        int c2 = rng.nextInt(cols);
+        if (c2 < c1) { int tmp = c1; c1 = c2; c2 = tmp; }
+
+        // 3) tukar isi gene di dalam rectangle
+        for (int r = r1; r <= r2; r++) {
+            for (int c = c1; c <= c2; c++) {
+
+                // kalau mau sel clue tidak ikut berubah (tetap putih)
+                // kalau tidak mau, hapus blok IF ini
+                if (mosaic[r][c] >= 0) {
+                    child1.gene[r][c] = 0;
+                    child2.gene[r][c] = 0;
+                    continue;
+                }
+
+                int temp = child1.gene[r][c];
+                child1.gene[r][c] = child2.gene[r][c];
+                child2.gene[r][c] = temp;
+            }
+        }
+
+        return new Individual[]{child1, child2};
+    }
+
+
     static Population evolvePopulation(Population pop, Random rng){
         Population newPop = new Population(pop.individuals.length, rng, false);
         
@@ -295,8 +418,23 @@ public class MosaicGA {
             // Individual parent2 = pop.tournamentIndividual(rng, 5);
             Individual parent1 = pop.rouletteWheelSelection(rng);
             Individual parent2 = pop.rouletteWheelSelection(rng);
-            Individual child = crossover(parent1, parent2, rng);
+            
+            // PILIHAN CROSSOVER:
+            // Uncomment salah satu untuk percobaan:
+
+            // 1. Uniform Crossover (default, per-gene ambil dari parent1/parent2 secara acak)
+            //Individual child = uniformCrossover(parent1, parent2, rng);
+
+            // 2. Rectangle Crossover (swap satu blok persegi panjang antara parent1 & parent2)
+            Individual[] children = rectangleCrossover(parent1, parent2, rng);
+            Individual child = rng.nextBoolean() ? children[0] : children[1];
+
+            // 1. Random Flip Bit Mutation (default)
             child.mutate(rng, mutationRate);
+
+            // 2. Guided Mutation (menggunakan clue untuk memilih bit yang akan di-flip)
+            // child.guidedMutate(rng, mutationRate);
+
             child.updateFitness();
 
             newPop.individuals[i] = child;

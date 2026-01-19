@@ -49,6 +49,14 @@ public class Individual implements Comparable<Individual>{//Ini untuk mapping in
         }
     }
 
+    //method untuk guided mutation (menggunakan clue untuk memilih bit yang akan di-flip)
+    public void guidedMutate(Random rng, double mutationRate){
+        //kita harus check dulu apakah boleh di mutasi atau tidak
+        if(rng.nextDouble() < mutationRate){
+            MosaicGA.guidedFlipBit(this, rng);
+        }
+    }
+
     //method untuk mengupdate fitness setiap kali muncul individu baru
     public double updateFitness(){
         this.fitness = MosaicGA.fitnessTotal(this);
